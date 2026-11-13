@@ -77,6 +77,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Spring Security：認証・認可 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
