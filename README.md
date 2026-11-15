@@ -129,20 +129,53 @@ http://localhost:8080/register
 
 ローカル環境ではH2データベースを使用します。
 
-## 7. AWS本番環境（構築予定）
+## 7. AWS本番環境（デプロイ済み）
 
-AWS上へのデプロイを予定しています。
+### 公開URL
 
-本番環境ではMySQLを利用し、接続情報は環境変数で管理する構成を想定しています。
+https://taikaku-nutrition.duckdns.org/
 
-### 使用予定の環境変数
+AWS EC2上にアプリケーションをデプロイし、HTTPSで公開しています。
 
-- `SPRING_PROFILES_ACTIVE=prod`
-- `DB_URL`
-- `DB_USERNAME`
-- `DB_PASSWORD`
+### インフラ構成
 
-デプロイ完了後、AWS構成図と公開URLを追記します。
+| 分類 | 技術・サービス |
+|---|---|
+| クラウド | AWS EC2（東京リージョン） |
+| OS | Amazon Linux 2023 |
+| Webサーバー | nginx |
+| アプリケーション | Spring Boot / Java 17 |
+| データベース | H2（ファイル永続化） |
+| ドメイン | DuckDNS |
+| HTTPS | Let's Encrypt / Certbot |
+| プロセス管理 | systemd |
+
+### 通信構成
+
+ブラウザ
+↓ HTTPS（443番ポート）
+nginx
+↓ HTTP（localhost:8080）
+Spring Boot
+↓
+H2データベース
+
+### セキュリティ・運用
+
+- HTTPS通信とHTTPからHTTPSへのリダイレクト
+- AWSセキュリティグループによるアクセス制御
+- Spring Bootの8080番ポートをローカル接続に限定
+- Spring Securityによる認証・アクセス制御
+- systemdによるアプリケーションの自動起動
+- CertbotによるSSL証明書の自動更新
+- 証明書更新後のnginx自動再読み込み
+- Swap領域（1GiB）の設定によるメモリ不足対策
+
+### 今後のインフラ改善
+
+- Amazon RDS（MySQL）への移行
+- CI/CDによるデプロイの自動化
+- 監視・バックアップ体制の強化
 
 ## 8. 今後の改善予定
 
