@@ -15,27 +15,25 @@ public class NutritionGoalService {
         this.nutritionGoalRepository = nutritionGoalRepository;
     }
 
-    public NutritionGoal getGoal() {
-
-        return nutritionGoalRepository
-                .findAll()
-                .stream()
-                .findFirst()
-                .orElse(new NutritionGoal());
-    }
 
     public void saveGoal(NutritionGoal nutritionGoal) {
 
         NutritionGoal existingGoal = nutritionGoalRepository
-                .findAll()
-                .stream()
-                .findFirst()
+                .findByUserId(nutritionGoal.getUser().getId())
                 .orElse(null);
-
         if (existingGoal != null) {
             nutritionGoal.setId(existingGoal.getId());
+        } else {
+            nutritionGoal.setId(null);
         }
 
         nutritionGoalRepository.save(nutritionGoal);
+    }
+
+    public NutritionGoal getGoalByUser(Long userId) {
+
+        return nutritionGoalRepository
+                .findByUserId(userId)
+                .orElse(new NutritionGoal());
     }
 }

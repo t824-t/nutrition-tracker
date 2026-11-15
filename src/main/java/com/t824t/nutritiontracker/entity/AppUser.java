@@ -17,6 +17,10 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
+    public Long getId() {
+        return id;
+    }
+
     public String getUsername() {
         return username;
     }

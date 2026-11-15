@@ -14,18 +14,29 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Configuration
 public class SecurityConfig {
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/register").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
+                        .defaultSuccessUrl("/", true)
                         .permitAll()
+                )
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/h2-console/**")
+                )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
                 );
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

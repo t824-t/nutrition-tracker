@@ -3,9 +3,9 @@ package com.t824t.nutritiontracker.service;
 import com.t824t.nutritiontracker.entity.WeightRecord;
 import com.t824t.nutritiontracker.repository.WeightRecordRepository;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
 import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @Service
 public class WeightRecordService {
@@ -23,7 +23,8 @@ public class WeightRecordService {
     public void saveWeight(WeightRecord weightRecord) {
 
         WeightRecord existingRecord =
-                weightRecordRepository.findFirstByRecordDate(
+                weightRecordRepository.findFirstByUserIdAndRecordDate(
+                        weightRecord.getUser().getId(),
                         weightRecord.getRecordDate()
                 );
 
@@ -42,25 +43,29 @@ public class WeightRecordService {
     }
 
 
-    // 日付の古い順で全履歴取得
-    public List<WeightRecord> getAllWeights() {
-
-        return weightRecordRepository
-                .findAllByOrderByRecordDateAsc();
-    }
 
 
-    // 指定日の体重を1件取得
-    public WeightRecord getWeightByDate(LocalDate date) {
-
-        return weightRecordRepository
-                .findFirstByRecordDate(date);
-    }
 
 
     // 削除
-    public void deleteWeight(Long id) {
+    public void deleteWeight(Long id, Long userId) {
 
-        weightRecordRepository.deleteById(id);
+        WeightRecord weightRecord =
+                getWeightByIdAndUser(id, userId);
+
+        weightRecordRepository.delete(weightRecord);
+    }
+
+    public List<WeightRecord> getWeightsByUser(Long userId) {
+        return weightRecordRepository
+                .findByUserIdOrderByRecordDateDesc(userId);
+    }
+
+    public WeightRecord getWeightByIdAndUser(Long id, Long userId) {
+        return weightRecordRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "体重記録が見つかりません"
+                ));
     }
 }

@@ -22,22 +22,29 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+
+import com.t824t.nutritiontracker.service.AppUserService;
+
 @Controller
 public class HomeController {
 
     private final MealService mealService;
     private final NutritionGoalService nutritionGoalService;
     private final WeightRecordService weightRecordService;
+    private final AppUserService appUserService;
 
 
     public HomeController(
             MealService mealService,
             NutritionGoalService nutritionGoalService,
-            WeightRecordService weightRecordService) {
+            WeightRecordService weightRecordService,
+            AppUserService appUserService) {
 
         this.mealService = mealService;
         this.nutritionGoalService = nutritionGoalService;
         this.weightRecordService = weightRecordService;
+        this.appUserService = appUserService;
     }
 
 
@@ -51,7 +58,14 @@ public class HomeController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "new") String sort,
             @RequestParam(required = false) LocalDate date,
-            Model model) {
+            Model model,
+            Authentication authentication) {
+
+        String username = authentication.getName();
+
+        model.addAttribute("username", username);
+
+        Long userId = appUserService.getUserByUsername(username).getId();
 
         LocalDate selectedDate =
                 (date != null) ? date : LocalDate.now();
@@ -61,7 +75,8 @@ public class HomeController {
                 selectedDate,
                 keyword,
                 page,
-                sort
+                sort,
+                userId
         );
 
 
@@ -102,7 +117,8 @@ public class HomeController {
             LocalDate selectedDate,
             String keyword,
             int page,
-            String sort) {
+            String sort,
+            Long userId) {
 
 
         // =========================
@@ -114,7 +130,8 @@ public class HomeController {
         if (keyword == null || keyword.isBlank()) {
 
             mealPage =
-                    mealService.getMealsByDate(
+                    mealService.getMealsByUserAndDate(
+                            userId,
                             selectedDate,
                             page,
                             sort
@@ -123,7 +140,8 @@ public class HomeController {
         } else {
 
             mealPage =
-                    mealService.searchMealsByDateAndKeyword(
+                    mealService.searchMealsByUserAndDateAndKeyword(
+                            userId,
                             selectedDate,
                             keyword,
                             page,
@@ -153,22 +171,26 @@ public class HomeController {
         // =========================
 
         int totalCalories =
-                mealService.getTotalCalories(
+                mealService.getTotalCaloriesByUser(
+                        userId,
                         selectedDate
                 );
 
         double totalProtein =
-                mealService.getTotalProtein(
+                mealService.getTotalProteinByUser(
+                        userId,
                         selectedDate
                 );
 
         double totalFat =
-                mealService.getTotalFat(
+                mealService.getTotalFatByUser(
+                        userId,
                         selectedDate
                 );
 
         double totalCarbs =
-                mealService.getTotalCarbs(
+                mealService.getTotalCarbsByUser(
+                        userId,
                         selectedDate
                 );
 
@@ -219,7 +241,7 @@ public class HomeController {
         // =========================
 
         List<WeightRecord> weightRecords =
-                weightRecordService.getAllWeights();
+                weightRecordService.getWeightsByUser(userId);
 
         model.addAttribute(
                 "weightRecords",
@@ -243,7 +265,7 @@ public class HomeController {
         } else {
 
             nutritionGoal =
-                    nutritionGoalService.getGoal();
+                    nutritionGoalService.getGoalByUser(userId);
 
             model.addAttribute(
                     "nutritionGoal",
@@ -346,7 +368,8 @@ public class HomeController {
             @ModelAttribute("meal")
             Meal meal,
             BindingResult result,
-            Model model) {
+            Model model,
+            Authentication authentication) {
 
         if (result.hasErrors()) {
 
@@ -361,7 +384,13 @@ public class HomeController {
                     selectedDate,
                     null,
                     0,
-                    "new"
+                    "new",
+                    appUserService.getUserByUsername(
+                            org.springframework.security.core.context.SecurityContextHolder
+                                    .getContext()
+                                    .getAuthentication()
+                                    .getName()
+                    ).getId()
             );
 
 
@@ -388,9 +417,13 @@ public class HomeController {
         }
 
 
-        mealService.saveMeal(
-                meal
+        meal.setUser(
+                appUserService.getUserByUsername(
+                        authentication.getName()
+                )
         );
+
+        mealService.saveMeal(meal);
 
 
         return "redirect:/?date="
@@ -405,11 +438,17 @@ public class HomeController {
     @GetMapping("/detail/{id}")
     public String detailMeal(
             @PathVariable Long id,
-            Model model) {
+            Model model,
+            Authentication authentication) {
+
+        Long userId = appUserService
+                .getUserByUsername(authentication.getName())
+                .getId();
 
         Meal meal =
-                mealService.getMealById(
-                        id
+                mealService.getMealByIdAndUser(
+                        id,
+                        userId
                 );
 
         model.addAttribute(
@@ -428,11 +467,17 @@ public class HomeController {
     @GetMapping("/edit/{id}")
     public String editMeal(
             @PathVariable Long id,
-            Model model) {
+            Model model,
+            Authentication authentication) {
+
+        Long userId = appUserService
+                .getUserByUsername(authentication.getName())
+                .getId();
 
         Meal meal =
-                mealService.getMealById(
-                        id
+                mealService.getMealByIdAndUser(
+                        id,
+                        userId
                 );
 
         model.addAttribute(
@@ -455,7 +500,8 @@ public class HomeController {
             @ModelAttribute("meal")
             Meal meal,
             BindingResult result,
-            Model model) {
+            Model model,
+            Authentication authentication) {
 
         if (result.hasErrors()) {
 
@@ -468,13 +514,19 @@ public class HomeController {
         }
 
 
-        meal.setId(
-                id
+        Long userId = appUserService
+                .getUserByUsername(authentication.getName())
+                .getId();
+
+        Meal existingMeal = mealService.getMealByIdAndUser(
+                id,
+                userId
         );
 
-        mealService.saveMeal(
-                meal
-        );
+        meal.setId(existingMeal.getId());
+        meal.setUser(existingMeal.getUser());
+
+        mealService.saveMeal(meal);
 
 
         return "redirect:/?date="
@@ -488,11 +540,17 @@ public class HomeController {
 
     @PostMapping("/delete/{id}")
     public String deleteMeal(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        Long userId = appUserService
+                .getUserByUsername(authentication.getName())
+                .getId();
 
         Meal meal =
-                mealService.getMealById(
-                        id
+                mealService.getMealByIdAndUser(
+                        id,
+                        userId
                 );
 
         LocalDate mealDate =
@@ -500,9 +558,9 @@ public class HomeController {
 
 
         mealService.deleteMeal(
-                id
+                id,
+                userId
         );
-
 
         return "redirect:/?date="
                 + mealDate;
@@ -519,7 +577,8 @@ public class HomeController {
             @ModelAttribute("nutritionGoal")
             NutritionGoal nutritionGoal,
             BindingResult result,
-            Model model) {
+            Model model,
+            Authentication authentication) {
 
         // ===== バリデーション確認用 =====
         System.out.println("===== NutritionGoal validation =====");
@@ -546,9 +605,14 @@ public class HomeController {
                     selectedDate,
                     null,
                     0,
-                    "new"
+                    "new",
+                    appUserService.getUserByUsername(
+                            org.springframework.security.core.context.SecurityContextHolder
+                                    .getContext()
+                                    .getAuthentication()
+                                    .getName()
+                    ).getId()
             );
-
 
             // 入力されたNutritionGoalを
             // バリデーション結果ごと画面へ戻す
@@ -588,6 +652,12 @@ public class HomeController {
         }
 
 
+        nutritionGoal.setUser(
+                appUserService.getUserByUsername(
+                        authentication.getName()
+                )
+        );
+
         nutritionGoalService.saveGoal(
                 nutritionGoal
         );
@@ -607,7 +677,8 @@ public class HomeController {
             @ModelAttribute("weightRecord")
             WeightRecord weightRecord,
             BindingResult result,
-            Model model) {
+            Model model,
+            Authentication authentication) {
 
         if (result.hasErrors()) {
 
@@ -622,7 +693,13 @@ public class HomeController {
                     selectedDate,
                     null,
                     0,
-                    "new"
+                    "new",
+                    appUserService.getUserByUsername(
+                            org.springframework.security.core.context.SecurityContextHolder
+                                    .getContext()
+                                    .getAuthentication()
+                                    .getName()
+                    ).getId()
             );
 
 
@@ -649,6 +726,12 @@ public class HomeController {
         }
 
 
+        weightRecord.setUser(
+                appUserService.getUserByUsername(
+                        authentication.getName()
+                )
+        );
+
         weightRecordService.saveWeight(
                 weightRecord
         );
@@ -665,11 +748,14 @@ public class HomeController {
 
     @PostMapping("/weight/delete/{id}")
     public String deleteWeight(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
 
-        weightRecordService.deleteWeight(
-                id
-        );
+        Long userId = appUserService
+                .getUserByUsername(authentication.getName())
+                .getId();
+
+        weightRecordService.deleteWeight(id, userId);
 
 
         return "redirect:/";

@@ -25,179 +25,137 @@ public class MealService {
         mealRepository.save(meal);
     }
 
-    public List<Meal> getAllMeals() {
-        return mealRepository.findAll();
+
+
+
+    public void deleteMeal(Long id, Long userId) {
+
+        Meal meal = getMealByIdAndUser(id, userId);
+
+        mealRepository.delete(meal);
     }
 
-    public Page<Meal> getMealsByPage(int page, String sort) {
 
-        Sort sortOrder;
-
-        if (sort.equals("old")) {
-            sortOrder = Sort.by("id").ascending();
-        } else {
-            sortOrder = Sort.by("id").descending();
-        }
-
-        Pageable pageable = PageRequest.of(
-                page,
-                10,
-                sortOrder
-        );
-
-        return mealRepository.findAll(pageable);
-    }
-
-    public List<Meal> getMealsByDate(LocalDate mealDate) {
-        return mealRepository.findByMealDate(mealDate);
-    }
-
-    public Page<Meal> getMealsByDate(
+    public Page<Meal> getMealsByUserAndDate(
+            Long userId,
             LocalDate mealDate,
             int page,
-            String sort) {
-
+            String sort
+    ) {
         Sort sortOrder;
 
-        if (sort.equals("old")) {
+        if ("old".equals(sort)) {
             sortOrder = Sort.by("id").ascending();
         } else {
             sortOrder = Sort.by("id").descending();
         }
 
-        Pageable pageable = PageRequest.of(
-                page,
-                10,
-                sortOrder
-        );
+        Pageable pageable = PageRequest.of(page, 10, sortOrder);
 
-        return mealRepository.findByMealDate(
+        return mealRepository.findByUserIdAndMealDate(
+                userId,
                 mealDate,
                 pageable
         );
     }
 
-    public Meal getMealById(Long id) {
-        return mealRepository.findById(id).orElseThrow();
-    }
-
-    public void deleteMeal(Long id) {
-        mealRepository.deleteById(id);
-    }
-
-    // 今日の合計カロリー
-    public int getTotalCalories(LocalDate mealDate) {
-
-        List<Meal> meals = mealRepository.findByMealDate(mealDate);
-
-        int total = 0;
-
-        for (Meal meal : meals) {
-            if (meal.getCalories() != null) {
-                total += meal.getCalories();
-            }
-        }
-
-        return total;
-    }
-
-    // 今日の合計たんぱく質
-    public double getTotalProtein(LocalDate mealDate) {
-
-        List<Meal> meals = mealRepository.findByMealDate(mealDate);
-
-        double total = 0;
-
-        for (Meal meal : meals) {
-            if (meal.getProtein() != null) {
-                total += meal.getProtein();
-            }
-        }
-
-        return total;
-    }
-
-    // 今日の合計脂質
-    public double getTotalFat(LocalDate mealDate) {
-
-        List<Meal> meals = mealRepository.findByMealDate(mealDate);
-
-        double total = 0;
-
-        for (Meal meal : meals) {
-            if (meal.getFat() != null) {
-                total += meal.getFat();
-            }
-        }
-
-        return total;
-    }
-
-    // 今日の合計炭水化物
-    public double getTotalCarbs(LocalDate mealDate) {
-
-        List<Meal> meals = mealRepository.findByMealDate(mealDate);
-
-        double total = 0;
-
-        for (Meal meal : meals) {
-            if (meal.getCarbs() != null) {
-                total += meal.getCarbs();
-            }
-        }
-
-        return total;
-    }
-
-    public Page<Meal> searchMealsByPage(
-            String keyword,
-            int page,
-            String sort) {
-
-        Sort sortOrder;
-
-        if (sort.equals("old")) {
-            sortOrder = Sort.by("id").ascending();
-        } else {
-            sortOrder = Sort.by("id").descending();
-        }
-
-        Pageable pageable = PageRequest.of(
-                page,
-                10,
-                sortOrder
-        );
-
-        return mealRepository.findByMealNameContaining(
-                keyword,
-                pageable
-        );
-    }
-
-    public Page<Meal> searchMealsByDateAndKeyword(
+    public Page<Meal> searchMealsByUserAndDateAndKeyword(
+            Long userId,
             LocalDate mealDate,
             String keyword,
             int page,
-            String sort) {
-
+            String sort
+    ) {
         Sort sortOrder;
 
-        if (sort.equals("old")) {
+        if ("old".equals(sort)) {
             sortOrder = Sort.by("id").ascending();
         } else {
             sortOrder = Sort.by("id").descending();
         }
 
-        Pageable pageable = PageRequest.of(
-                page,
-                10,
-                sortOrder
-        );
+        Pageable pageable = PageRequest.of(page, 10, sortOrder);
 
-        return mealRepository.findByMealDateAndMealNameContaining(
+        return mealRepository.findByUserIdAndMealDateAndMealNameContaining(
+                userId,
                 mealDate,
                 keyword,
                 pageable
+        );
+    }
+
+    public int getTotalCaloriesByUser(
+            Long userId,
+            LocalDate mealDate
+    ) {
+        List<Meal> meals =
+                mealRepository.findByUserIdAndMealDate(
+                        userId,
+                        mealDate
+                );
+
+        return meals.stream()
+                .mapToInt(Meal::getCalories)
+                .sum();
+    }
+
+    public double getTotalProteinByUser(
+            Long userId,
+            LocalDate mealDate
+    ) {
+        List<Meal> meals =
+                mealRepository.findByUserIdAndMealDate(
+                        userId,
+                        mealDate
+                );
+
+        return meals.stream()
+                .mapToDouble(Meal::getProtein)
+                .sum();
+    }
+
+    public double getTotalFatByUser(
+            Long userId,
+            LocalDate mealDate
+    ) {
+        List<Meal> meals =
+                mealRepository.findByUserIdAndMealDate(
+                        userId,
+                        mealDate
+                );
+
+        return meals.stream()
+                .mapToDouble(Meal::getFat)
+                .sum();
+    }
+
+    public double getTotalCarbsByUser(
+            Long userId,
+            LocalDate mealDate
+    ) {
+        List<Meal> meals =
+                mealRepository.findByUserIdAndMealDate(
+                        userId,
+                        mealDate
+                );
+
+        return meals.stream()
+                .mapToDouble(Meal::getCarbs)
+                .sum();
+    }
+
+    public Meal getMealByIdAndUser(
+            Long mealId,
+            Long userId
+    ) {
+        return mealRepository.findByIdAndUserId(
+                mealId,
+                userId
+        ).orElseThrow(() ->
+                new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "食事データが見つかりません"
+                )
         );
     }
 }

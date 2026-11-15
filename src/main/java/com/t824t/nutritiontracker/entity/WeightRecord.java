@@ -3,8 +3,11 @@ package com.t824t.nutritiontracker.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDate;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class WeightRecord {
@@ -12,6 +15,10 @@ public class WeightRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private AppUser user;
 
     @NotNull(message = "日付を入力してください")
     private LocalDate recordDate;
@@ -29,6 +36,14 @@ public class WeightRecord {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public AppUser getUser() {
+        return user;
+    }
+
+    public void setUser(AppUser user) {
+        this.user = user;
     }
 
     public LocalDate getRecordDate() {

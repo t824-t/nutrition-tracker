@@ -197,7 +197,7 @@
                     type="date"
                     name="date"
                     class="form-control"
-                    th:value="${selectedDate}">
+                    th:value="${#temporals.format(selectedDate, 'yyyy-MM-dd')}">
 
             <input
                     type="hidden"

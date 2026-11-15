@@ -12,6 +12,10 @@ public class Meal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private AppUser user;
+
     @NotBlank(message = "食事名を入力してください")
     private String mealName;
 
@@ -45,6 +49,14 @@ public class Meal {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public AppUser getUser() {
+        return user;
+    }
+
+    public void setUser(AppUser user) {
+        this.user = user;
     }
 
 

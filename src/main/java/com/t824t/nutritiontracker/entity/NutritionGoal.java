@@ -12,6 +12,10 @@ public class NutritionGoal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true)
+    private AppUser user;
+
     @NotNull(message = "目標カロリーを入力してください")
     @Min(value = 1, message = "目標カロリーは1以上で入力してください")
     private Integer targetCalories;
@@ -37,6 +41,14 @@ public class NutritionGoal {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public AppUser getUser() {
+        return user;
+    }
+
+    public void setUser(AppUser user) {
+        this.user = user;
     }
 
     public Integer getTargetCalories() {

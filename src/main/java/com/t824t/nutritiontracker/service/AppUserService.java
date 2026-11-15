@@ -48,4 +48,10 @@ public class AppUserService implements UserDetailsService {
     public boolean existsByUsername(String username) {
         return appUserRepository.existsByUsername(username);
     }
+
+    public AppUser getUserByUsername(String username) {
+        return appUserRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("ユーザーが見つかりません"));
+    }
 }
