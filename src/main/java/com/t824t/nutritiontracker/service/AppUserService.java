@@ -35,14 +35,14 @@ public class AppUserService implements UserDetailsService {
                 .build();
     }
 
-    public AppUser registerUser(String username, String password) {
+    public void registerUser(String username, String password) {
 
         AppUser user = new AppUser();
 
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
 
-        return appUserRepository.save(user);
+        appUserRepository.save(user);
     }
 
     public boolean existsByUsername(String username) {

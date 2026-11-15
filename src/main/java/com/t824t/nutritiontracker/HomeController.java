@@ -284,20 +284,24 @@ public class HomeController {
         int carbsProgress = 0;
 
 
-        if (nutritionGoal.getTargetCalories() != null
-                && nutritionGoal.getTargetCalories() > 0) {
+        Integer targetCalories = nutritionGoal != null
+                ? nutritionGoal.getTargetCalories()
+                : null;
+
+        if (targetCalories != null && targetCalories > 0) {
 
             calorieProgress =
                     (int) Math.min(
                             100,
                             totalCalories
                                     * 100.0
-                                    / nutritionGoal.getTargetCalories()
+                                    / targetCalories
                     );
         }
 
 
-        if (nutritionGoal.getTargetProtein() != null
+        if (nutritionGoal != null
+                && nutritionGoal.getTargetProtein() != null
                 && nutritionGoal.getTargetProtein() > 0) {
 
             proteinProgress =
@@ -310,7 +314,8 @@ public class HomeController {
         }
 
 
-        if (nutritionGoal.getTargetFat() != null
+        if (nutritionGoal != null
+                && nutritionGoal.getTargetFat() != null
                 && nutritionGoal.getTargetFat() > 0) {
 
             fatProgress =
@@ -323,7 +328,8 @@ public class HomeController {
         }
 
 
-        if (nutritionGoal.getTargetCarbs() != null
+        if (nutritionGoal != null
+                && nutritionGoal.getTargetCarbs() != null
                 && nutritionGoal.getTargetCarbs() > 0) {
 
             carbsProgress =
