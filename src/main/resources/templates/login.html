@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン | Nutrition Tracker</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f5f7fb;
+            color: #243047;
+            margin: 0;
+            padding: 60px 20px;
+        }
+        .login-card {
+            max-width: 400px;
+            margin: auto;
+            padding: 32px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px #00000012;
+        }
+        h1 { text-align: center; }
+        label { display: block; margin: 16px 0 6px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccd3df;
+            border-radius: 6px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .center { text-align: center; }
+        .message { color: #16703b; }
+        .error { color: #c62828; }
+        a { color: #2563eb; }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <h1>Nutrition Tracker</h1>
+    <p class="center">栄養管理アプリへようこそ</p>
+    <h2>ログイン</h2>
+    <p>登録したユーザー名とパスワードを入力してください。</p>
+
+    <p class="message" th:if="${param.registered}">
+        登録が完了しました。ログインしてください。
+    </p>
+    <p class="error" th:if="${param.error}">
+        ユーザー名またはパスワードが正しくありません。
+    </p>
+    <p class="message" th:if="${param.logout}">
+        ログアウトしました。
+    </p>
+
+    <form th:action="@{/login}" method="post">
+        <label for="username">ユーザー名</label>
+        <input id="username" name="username" type="text"
+               autocomplete="username" required>
+
+        <label for="password">パスワード</label>
+        <input id="password" name="password" type="password"
+               autocomplete="current-password" required>
+
+        <button type="submit">ログイン</button>
+    </form>
+
+    <p class="center">初めてご利用の方はこちら</p>
+    <p class="center">
+        <a th:href="@{/register}">新規アカウント登録</a>
+    </p>
+</div>
+</body>
+</html>
