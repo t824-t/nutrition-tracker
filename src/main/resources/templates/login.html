@@ -43,6 +43,28 @@
         .message { color: #16703b; }
         .error { color: #c62828; }
         a { color: #2563eb; }
+
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper input {
+            padding-right: 72px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: auto;
+            margin: 0;
+            padding: 8px 10px;
+            background: transparent;
+            color: #2563eb;
+            font-size: 13px;
+        }
+        .password-toggle:hover {
+            background: #eff6ff;
+        }
     </style>
 </head>
 <body>
@@ -68,8 +90,14 @@
                autocomplete="username" required>
 
         <label for="password">パスワード</label>
+        <div class="password-wrapper">
         <input id="password" name="password" type="password"
                autocomplete="current-password" required>
+        <button type="button" id="togglePassword"
+                class="password-toggle"
+                aria-label="パスワードを表示"
+                aria-pressed="false">表示</button>
+        </div>
 
         <button type="submit">ログイン</button>
     </form>
@@ -79,5 +107,16 @@
         <a th:href="@{/register}">新規アカウント登録</a>
     </p>
 </div>
+
+<script>
+document.getElementById("togglePassword").addEventListener("click", function () {
+    const input = document.getElementById("password");
+    const visible = input.type === "password";
+    input.type = visible ? "text" : "password";
+    this.textContent = visible ? "隠す" : "表示";
+    this.setAttribute("aria-label", visible ? "パスワードを隠す" : "パスワードを表示");
+    this.setAttribute("aria-pressed", String(visible));
+});
+</script>
 </body>
 </html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Nutrition Tracker
+    </title>
+
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+
+    <script
+            src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+
+<style>
+/* nutrition-ui-v1 */
+    body {
+        background: #f5f7fb;
+        color: #243047;
+        font-family: sans-serif;
+    }
+
+    .container {
+        max-width: 1100px;
+        padding-bottom: 60px;
+    }
+
+    h1, h2, h3 {
+        font-weight: 700;
+        color: #243047;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px #00000012;
+    }
+
+    .card-body {
+        padding: 28px;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #ccd3df;
+        border-radius: 6px;
+        padding: 10px 12px;
+    }
+
+    .btn {
+        border-radius: 6px;
+        padding: 10px 16px;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+
+    .table {
+        background: white;
+    }
+
+    .progress {
+        height: 12px;
+        border-radius: 10px;
+    }
+
+    .progress-bar {
+        background: #2563eb;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin-top: 24px !important;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .btn {
+            padding: 9px 12px;
+        }
+    }
+
+/* meal-table-mobile-fix */
+.table-responsive .table {
+    min-width: 760px;
+}
+.table-responsive .table th,
+.table-responsive .table td {
+    white-space: nowrap;
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="container mt-5">
+
+<nav class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+    <a class="btn btn-outline-primary" th:href="@{/}">ダッシュボード</a>
+    <a class="btn btn-outline-primary" th:href="@{/meals}">食事管理</a>
+    <a class="btn btn-outline-primary" th:href="@{/weights}">体重管理</a>
+    <a class="btn btn-outline-primary" th:href="@{/goals}">目標設定</a>
+
+    <form th:action="@{/logout}" method="post"
+          class="ms-md-auto mb-0">
+        <button type="submit" class="btn btn-outline-danger">
+            ログアウト
+        </button>
+    </form>
+</nav>
+<h1 class="mb-4">食事管理</h1>
+    <!-- ========================= -->
+    <!-- 食事登録 -->
+    <!-- ========================= -->
+
+    <!-- meal-card-v1 -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="h4 mb-3">食事を記録する</h2>
+    <form
+            th:action="@{/meals}"
+            method="post"
+            th:object="${meal}">
+
+
+        <!-- 日付 -->
+        <div class="mb-3">
+
+            <label class="form-label">
+                日付
+            </label>
+
+            <input
+                    type="date"
+                    class="form-control"
+                    th:field="*{mealDate}">
+
+            <div
+                    class="text-danger"
+                    th:if="${#fields.hasErrors('mealDate')}"
+                    th:errors="*{mealDate}">
+            </div>
+
+        </div>
+
+
+        <!-- 食事名 -->
+        <div class="mb-3">
+
+            <label class="form-label">
+                食事名
+            </label>
+
+            <input
+                    type="text"
+                    class="form-control"
+                    th:field="*{mealName}">
+
+            <div
+                    class="text-danger"
+                    th:if="${#fields.hasErrors('mealName')}"
+                    th:errors="*{mealName}">
+            </div>
+
+        </div>
+
+
+        <!-- カロリー -->
+        <div class="mb-3">
+
+            <label class="form-label">
+                カロリー
+            </label>
+
+            <input
+                    type="number"
+                    class="form-control"
+                    th:field="*{calories}">
+
+            <div
+                    class="text-danger"
+                    th:if="${#fields.hasErrors('calories')}"
+                    th:errors="*{calories}">
+            </div>
+
+        </div>
+
+
+        <!-- たんぱく質 -->
+        <div class="mb-3">
+
+            <label class="form-label">
+                たんぱく質
+            </label>
+
+            <input
+                    type="number"
+                    step="0.1"
+                    class="form-control"
+                    th:field="*{protein}">
+
+            <div
+                    class="text-danger"
+                    th:if="${#fields.hasErrors('protein')}"
+                    th:errors="*{protein}">
+            </div>
+
+        </div>
+
+
+        <!-- 脂質 -->
+        <div class="mb-3">
+
+            <label class="form-label">
+                脂質
+            </label>
+
+            <input
+                    type="number"
+                    step="0.1"
+                    class="form-control"
+                    th:field="*{fat}">
+
+            <div
+                    class="text-danger"
+                    th:if="${#fields.hasErrors('fat')}"
+                    th:errors="*{fat}">
+            </div>
+
+        </div>
+
+
+        <!-- 炭水化物 -->
+        <div class="mb-3">
+
+            <label class="form-label">
+                炭水化物
+            </label>
+
+            <input
+                    type="number"
+                    step="0.1"
+                    class="form-control"
+                    th:field="*{carbs}">
+
+            <div
+                    class="text-danger"
+                    th:if="${#fields.hasErrors('carbs')}"
+                    th:errors="*{carbs}">
+            </div>
+
+        </div>
+
+
+        <button
+                type="submit"
+                class="btn btn-primary">
+            登録
+        </button>
+
+    </form>
+  </div>
+</div>
+
+
+    <hr>
+
+
+    <!-- ========================= -->
+    <!-- 日付選択 -->
+    <!-- ========================= -->
+
+    <form
+            th:action="@{/meals}"
+            method="get"
+            class="mb-2">
+
+        <label class="form-label">
+            日付
+        </label>
+
+        <div class="input-group">
+
+            <input
+                    type="date"
+                    name="date"
+                    class="form-control"
+                    th:value="${#temporals.format(selectedDate, 'yyyy-MM-dd')}">
+
+            <input
+                    type="hidden"
+                    name="keyword"
+                    th:value="${keyword}">
+
+            <input
+                    type="hidden"
+                    name="sort"
+                    th:value="${sort}">
+
+            <button
+                    type="submit"
+                    class="btn btn-primary">
+                この日を表示
+            </button>
+
+        </div>
+
+    </form>
+
+
+    <!-- ========================= -->
+    <!-- 日付移動 -->
+    <!-- ========================= -->
+
+    <div class="d-flex gap-2 mb-4">
+
+        <a
+                th:href="@{/meals(date=${selectedDate.minusDays(1)}, sort=${sort})}"
+                class="btn btn-outline-secondary">
+            ← 前の日
+        </a>
+
+        <a
+                th:href="@{/}"
+                class="btn btn-outline-primary">
+            今日
+        </a>
+
+        <a
+                th:href="@{/meals(date=${selectedDate.plusDays(1)}, sort=${sort})}"
+                class="btn btn-outline-secondary">
+            次の日 →
+        </a>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- 検索 -->
+    <!-- ========================= -->
+
+    <h3 class="mb-3">
+        検索
+    </h3>
+
+    <form
+            th:action="@{/meals}"
+            method="get">
+
+        <input
+                type="hidden"
+                name="date"
+                th:value="${selectedDate}">
+
+        <input
+                type="hidden"
+                name="sort"
+                th:value="${sort}">
+
+
+        <div class="input-group mb-3">
+
+            <input
+                    type="text"
+                    name="keyword"
+                    class="form-control"
+                    th:value="${keyword}"
+                    placeholder="食事名で検索">
+
+            <button
+                    class="btn btn-outline-secondary"
+                    type="submit">
+                検索
+            </button>
+
+            <a
+                    th:href="@{/meals(date=${selectedDate}, sort=${sort})}"
+                    class="btn btn-secondary">
+                クリア
+            </a>
+
+        </div>
+
+    </form>
+
+
+    <!-- ========================= -->
+    <!-- 並び替え -->
+    <!-- ========================= -->
+
+    <form
+            th:action="@{/meals}"
+            method="get"
+            class="mb-3">
+
+        <input
+                type="hidden"
+                name="keyword"
+                th:value="${keyword}">
+
+        <input
+                type="hidden"
+                name="date"
+                th:value="${selectedDate}">
+
+        <select
+                name="sort"
+                class="form-select"
+                onchange="this.form.submit()">
+
+            <option
+                    value="new"
+                    th:selected="${sort == 'new'}">
+                新しい順
+            </option>
+
+            <option
+                    value="old"
+                    th:selected="${sort == 'old'}">
+                古い順
+            </option>
+
+        </select>
+
+    </form>
+
+
+    <!-- ========================= -->
+    <!-- 食事一覧 -->
+    <!-- ========================= -->
+
+<!-- meal-list-card-v1 -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="mb-3">
+        登録済みの食事
+    </h2>
+
+
+
+<!-- mobile-meal-cards-v1 -->
+<div class="d-md-none">
+    <div th:each="meal : ${meals}" class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h5 class="fw-bold mb-0" th:text="${meal.mealName}">食事名</h5>
+                <span class="text-muted ms-2"
+                      th:text="${#temporals.format(meal.mealDate, 'M/d')}">11/16</span>
+            </div>
+
+            <div class="row row-cols-4 g-1 text-center mb-3">
+                <div class="col">
+                    <div class="bg-light rounded p-2">
+                        <small>kcal</small>
+                        <div class="fw-bold" th:text="${meal.calories}">0</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bg-light rounded p-2">
+                        <small>P</small>
+                        <div class="fw-bold" th:text="${meal.protein}">0</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bg-light rounded p-2">
+                        <small>F</small>
+                        <div class="fw-bold" th:text="${meal.fat}">0</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="bg-light rounded p-2">
+                        <small>C</small>
+                        <div class="fw-bold" th:text="${meal.carbs}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a class="btn btn-info btn-sm flex-fill"
+                   th:href="@{/detail/{id}(id=${meal.id})}">詳細</a>
+                <a class="btn btn-warning btn-sm flex-fill"
+                   th:href="@{/edit/{id}(id=${meal.id})}">編集</a>
+                <form class="flex-fill"
+                      th:action="@{/delete/{id}(id=${meal.id})}"
+                      method="post">
+                    <button class="btn btn-danger btn-sm w-100"
+                            type="submit">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive d-none d-md-block">
+    <table class="table">
+
+        <thead>
+
+        <tr>
+            <th>ID</th>
+            <th>食事名</th>
+            <th>日付</th>
+            <th>カロリー</th>
+            <th>たんぱく質</th>
+            <th>脂質</th>
+            <th>炭水化物</th>
+            <th>操作</th>
+        </tr>
+
+        </thead>
+
+
+        <tbody>
+
+        <tr th:each="meal : ${meals}">
+
+            <td th:text="${meal.id}">
+            </td>
+
+            <td th:text="${meal.mealName}">
+            </td>
+
+            <td th:text="${meal.mealDate}">
+            </td>
+
+            <td th:text="${meal.calories}">
+            </td>
+
+            <td th:text="${meal.protein}">
+            </td>
+
+            <td th:text="${meal.fat}">
+            </td>
+
+            <td th:text="${meal.carbs}">
+            </td>
+
+
+            <td>
+
+                <a
+                        class="btn btn-info btn-sm me-2"
+                        th:href="@{/detail/{id}(id=${meal.id})}">
+                    詳細
+                </a>
+
+
+                <a
+                        class="btn btn-warning btn-sm me-2"
+                        th:href="@{/edit/{id}(id=${meal.id})}">
+                    編集
+                </a>
+
+
+                <form
+                        th:action="@{/delete/{id}(id=${meal.id})}"
+                        method="post"
+                        class="d-inline">
+
+                    <button
+                            class="btn btn-danger btn-sm"
+                            type="submit">
+                        削除
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+        </tbody>
+
+    </table>
+    </div>
+
+
+    <!-- ========================= -->
+  </div>
+</div>
+
+    <!-- ページング -->
+    <!-- ========================= -->
+
+    <div
+            class="mt-3"
+            th:if="${totalPages > 0}">
+
+        <a
+                th:if="${currentPage > 0}"
+                th:href="@{/meals(page=${currentPage - 1},
+                    keyword=${keyword},
+                    sort=${sort},
+                    date=${selectedDate}
+                )}"
+                class="btn btn-secondary">
+            ← 前へ
+        </a>
+
+
+        <span th:text="${currentPage + 1}">
+        </span>
+
+        /
+
+        <span th:text="${totalPages}">
+        </span>
+
+
+        <a
+                th:if="${currentPage + 1 < totalPages}"
+                th:href="@{/meals(page=${currentPage + 1},
+                    keyword=${keyword},
+                    sort=${sort},
+                    date=${selectedDate}
+                )}"
+                class="btn btn-secondary">
+            次へ →
+        </a>
+
+    </div>
+
+</div>
+</body>
+</html>

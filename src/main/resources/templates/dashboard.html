@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Nutrition Tracker
+    </title>
+
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+
+    <script
+            src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+
+<style>
+/* nutrition-ui-v1 */
+    body {
+        background: #f5f7fb;
+        color: #243047;
+        font-family: sans-serif;
+    }
+
+    .container {
+        max-width: 1100px;
+        padding-bottom: 60px;
+    }
+
+    h1, h2, h3 {
+        font-weight: 700;
+        color: #243047;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px #00000012;
+    }
+
+    .card-body {
+        padding: 28px;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #ccd3df;
+        border-radius: 6px;
+        padding: 10px 12px;
+    }
+
+    .btn {
+        border-radius: 6px;
+        padding: 10px 16px;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+
+    .table {
+        background: white;
+    }
+
+    .progress {
+        height: 12px;
+        border-radius: 10px;
+    }
+
+    .progress-bar {
+        background: #2563eb;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin-top: 24px !important;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .btn {
+            padding: 9px 12px;
+        }
+    }
+
+/* meal-table-mobile-fix */
+.table-responsive .table {
+    min-width: 760px;
+}
+.table-responsive .table th,
+.table-responsive .table td {
+    white-space: nowrap;
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="container mt-5">
+
+<nav class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+    <a class="btn btn-outline-primary" th:href="@{/}">ダッシュボード</a>
+    <a class="btn btn-outline-primary" th:href="@{/meals}">食事管理</a>
+    <a class="btn btn-outline-primary" th:href="@{/weights}">体重管理</a>
+    <a class="btn btn-outline-primary" th:href="@{/goals}">目標設定</a>
+
+    <form th:action="@{/logout}" method="post"
+          class="ms-md-auto mb-0">
+        <button type="submit" class="btn btn-outline-danger">
+            ログアウト
+        </button>
+    </form>
+</nav>
+<h1 class="mb-4">ダッシュボード</h1>
+
+
+<!-- 体重推移グラフ -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h4 mb-3">体重推移（直近30日間）</h2>
+
+        <div th:if="${recentWeights != null and !recentWeights.isEmpty()}">
+            <svg id="weightChart"
+                 viewBox="0 0 600 260"
+                 role="img"
+                 aria-label="直近30日間の体重推移"
+                 style="width:100%;height:auto;max-height:300px;">
+            </svg>
+        </div>
+
+        <p th:if="${recentWeights == null or recentWeights.isEmpty()}"
+           class="text-muted mb-0">
+            直近30日間の体重記録はありません。
+        </p>
+
+        <div id="weightChartData"
+             th:if="${recentWeights != null and !recentWeights.isEmpty()}"
+             th:attr="data-weights=${recentWeights.![weight]},
+                      data-dates=${recentWeights.![recordDate]}"
+             hidden>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const dataElement = document.getElementById("weightChartData");
+    const svg = document.getElementById("weightChart");
+    if (!dataElement || !svg) return;
+
+    const weights = dataElement.dataset.weights
+        .replace(/[\[\]]/g, "")
+        .split(",")
+        .map(value => Number(value.trim()));
+
+    const dates = dataElement.dataset.dates
+        .replace(/[\[\]]/g, "")
+        .split(",")
+        .map(value => value.trim());
+
+    if (!weights.length || weights.some(value => !Number.isFinite(value))) return;
+
+    const ns = "http://www.w3.org/2000/svg";
+    const width = 600, height = 260;
+    const left = 55, right = 20, top = 20, bottom = 45;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+
+    const min = Math.floor(Math.min(...weights) - 0.5);
+    const max = Math.ceil(Math.max(...weights) + 0.5);
+    const range = Math.max(max - min, 1);
+
+    function addElement(tag, attributes, text) {
+        const element = document.createElementNS(ns, tag);
+        Object.entries(attributes).forEach(([key, value]) =>
+            element.setAttribute(key, value)
+        );
+        if (text !== undefined) element.textContent = text;
+        svg.appendChild(element);
+        return element;
+    }
+
+    function x(index) {
+        return weights.length === 1
+            ? left + plotWidth / 2
+            : left + (index / (weights.length - 1)) * plotWidth;
+    }
+
+    function y(value) {
+        return top + ((max - value) / range) * plotHeight;
+    }
+
+    for (let i = 0; i <= 4; i++) {
+        const value = min + (range * i / 4);
+        const yy = y(value);
+
+        addElement("line", {
+            x1: left, y1: yy,
+            x2: width - right, y2: yy,
+            stroke: "#e5e7eb"
+        });
+
+        addElement("text", {
+            x: left - 8, y: yy + 4,
+            "text-anchor": "end",
+            "font-size": "12",
+            fill: "#6b7280"
+        }, value.toFixed(1));
+    }
+
+    const points = weights.map((weight, index) =>
+        `${x(index)},${y(weight)}`
+    ).join(" ");
+
+    if (weights.length > 1) {
+        addElement("polyline", {
+            points: points,
+            fill: "none",
+            stroke: "#0d6efd",
+            "stroke-width": "3",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round"
+        });
+    }
+
+    weights.forEach((weight, index) => {
+        addElement("circle", {
+            cx: x(index),
+            cy: y(weight),
+            r: 4,
+            fill: "#0d6efd"
+        });
+    });
+
+    [0, dates.length - 1].filter((v, i, a) =>
+        a.indexOf(v) === i
+    ).forEach(index => {
+        addElement("text", {
+            x: x(index),
+            y: height - 12,
+            "text-anchor": "middle",
+            "font-size": "12",
+            fill: "#6b7280"
+        }, dates[index]);
+    });
+});
+</script>
+
+<!-- 最新体重カード -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">現在の体重</h2>
+            <a class="btn btn-sm btn-outline-primary"
+               th:href="@{/weights}">体重管理へ</a>
+        </div>
+
+        <div th:if="${latestWeight != null}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="bg-light rounded p-3 h-100">
+                        <div class="text-muted mb-1">最新の記録</div>
+                        <div class="fs-2 fw-bold">
+                            <span th:text="${latestWeight.weight}">70.0</span>
+                            <span class="fs-5">kg</span>
+                        </div>
+                        <small class="text-muted"
+                               th:text="${latestWeight.recordDate}">
+                            2026-11-16
+                        </small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="bg-light rounded p-3 h-100">
+                        <div class="text-muted mb-1">前回の記録との差</div>
+
+                        <div class="fs-2 fw-bold"
+                             th:if="${weightDifference != null}">
+                            <span th:text="${#numbers.formatDecimal(weightDifference, 1, 1)}">
+                                0.0
+                            </span>
+                            <span class="fs-5">kg</span>
+                        </div>
+
+                        <div class="text-muted"
+                             th:if="${weightDifference == null}">
+                            比較できる記録がありません
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-muted mb-0"
+           th:if="${latestWeight == null}">
+            まだ体重の記録がありません。
+        </p>
+    </div>
+</div>
+
+    <!-- ========================= -->
+    <!-- 選択日の進捗 -->
+    <!-- ========================= -->
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <h3 class="card-title mb-3">
+                選択日の進捗
+            </h3>
+
+            <p>
+                日付：
+                <strong th:text="${selectedDate}">
+                </strong>
+            </p>
+
+
+            <!-- カロリー -->
+            <div class="mb-4">
+
+                <div class="d-flex justify-content-between">
+
+                    <span>
+                        カロリー
+                    </span>
+
+                    <strong>
+
+                        <span th:text="${totalCalories}">
+                        </span>
+
+                        /
+
+                        <span th:text="${nutritionGoal.targetCalories}">
+                        </span>
+
+                        kcal
+
+                    </strong>
+
+                </div>
+
+
+                <div class="progress">
+
+                    <div
+                            class="progress-bar"
+                            role="progressbar"
+                            th:style="'width:' + ${calorieProgress} + '%'"
+                            th:text="${calorieProgress} + '%'">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- たんぱく質 -->
+            <div class="mb-4">
+
+                <div class="d-flex justify-content-between">
+
+                    <span>
+                        たんぱく質
+                    </span>
+
+                    <strong>
+
+                        <span th:text="${totalProtein}">
+                        </span>
+
+                        /
+
+                        <span th:text="${nutritionGoal.targetProtein}">
+                        </span>
+
+                        g
+
+                    </strong>
+
+                </div>
+
+
+                <div class="progress">
+
+                    <div
+                            class="progress-bar"
+                            role="progressbar"
+                            th:style="'width:' + ${proteinProgress} + '%'"
+                            th:text="${proteinProgress} + '%'">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- 脂質 -->
+            <div class="mb-4">
+
+                <div class="d-flex justify-content-between">
+
+                    <span>
+                        脂質
+                    </span>
+
+                    <strong>
+
+                        <span th:text="${totalFat}">
+                        </span>
+
+                        /
+
+                        <span th:text="${nutritionGoal.targetFat}">
+                        </span>
+
+                        g
+
+                    </strong>
+
+                </div>
+
+
+                <div class="progress">
+
+                    <div
+                            class="progress-bar"
+                            role="progressbar"
+                            th:style="'width:' + ${fatProgress} + '%'"
+                            th:text="${fatProgress} + '%'">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- 炭水化物 -->
+            <div class="mb-2">
+
+                <div class="d-flex justify-content-between">
+
+                    <span>
+                        炭水化物
+                    </span>
+
+                    <strong>
+
+                        <span th:text="${totalCarbs}">
+                        </span>
+
+                        /
+
+                        <span th:text="${nutritionGoal.targetCarbs}">
+                        </span>
+
+                        g
+
+                    </strong>
+
+                </div>
+
+
+                <div class="progress">
+
+                    <div
+                            class="progress-bar"
+                            role="progressbar"
+                            th:style="'width:' + ${carbsProgress} + '%'"
+                            th:text="${carbsProgress} + '%'">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+</div>
+</body>
+</html>

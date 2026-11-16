@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Nutrition Tracker
+    </title>
+
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+
+    <script
+            src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+
+<style>
+/* nutrition-ui-v1 */
+    body {
+        background: #f5f7fb;
+        color: #243047;
+        font-family: sans-serif;
+    }
+
+    .container {
+        max-width: 1100px;
+        padding-bottom: 60px;
+    }
+
+    h1, h2, h3 {
+        font-weight: 700;
+        color: #243047;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px #00000012;
+    }
+
+    .card-body {
+        padding: 28px;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #ccd3df;
+        border-radius: 6px;
+        padding: 10px 12px;
+    }
+
+    .btn {
+        border-radius: 6px;
+        padding: 10px 16px;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+
+    .table {
+        background: white;
+    }
+
+    .progress {
+        height: 12px;
+        border-radius: 10px;
+    }
+
+    .progress-bar {
+        background: #2563eb;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin-top: 24px !important;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .btn {
+            padding: 9px 12px;
+        }
+    }
+
+/* meal-table-mobile-fix */
+.table-responsive .table {
+    min-width: 760px;
+}
+.table-responsive .table th,
+.table-responsive .table td {
+    white-space: nowrap;
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="container mt-5">
+
+<nav class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+    <a class="btn btn-outline-primary" th:href="@{/}">ダッシュボード</a>
+    <a class="btn btn-outline-primary" th:href="@{/meals}">食事管理</a>
+    <a class="btn btn-outline-primary" th:href="@{/weights}">体重管理</a>
+    <a class="btn btn-outline-primary" th:href="@{/goals}">目標設定</a>
+
+    <form th:action="@{/logout}" method="post"
+          class="ms-md-auto mb-0">
+        <button type="submit" class="btn btn-outline-danger">
+            ログアウト
+        </button>
+    </form>
+</nav>
+<h1 class="mb-4">体重管理</h1>
+    <!-- ========================= -->
+    <!-- 体重記録 -->
+    <!-- ========================= -->
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <h3 class="card-title mb-3">
+                体重記録
+            </h3>
+
+
+            <form
+                    th:action="@{/weight}"
+                    method="post"
+                    th:object="${weightRecord}">
+
+                <div class="row align-items-end">
+
+
+                    <!-- 日付 -->
+                    <div class="col-md-4 mb-3">
+
+                        <label class="form-label">
+                            日付
+                        </label>
+
+                        <input
+                                type="date"
+                                class="form-control"
+                                th:field="*{recordDate}">
+
+                        <div
+                                class="text-danger"
+                                th:if="${#fields.hasErrors('recordDate')}"
+                                th:errors="*{recordDate}">
+                        </div>
+
+                    </div>
+
+
+                    <!-- 体重 -->
+                    <div class="col-md-4 mb-3">
+
+                        <label class="form-label">
+                            体重
+                        </label>
+
+                        <input
+                                type="number"
+                                step="0.1"
+                                class="form-control"
+                                th:field="*{weight}"
+                                placeholder="例：70.2">
+
+                        <div
+                                class="text-danger"
+                                th:if="${#fields.hasErrors('weight')}"
+                                th:errors="*{weight}">
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-2 mb-3">
+
+                        <button
+                                type="submit"
+                                class="btn btn-primary">
+                            体重を記録
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- 体重履歴 -->
+    <!-- ========================= -->
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <h3 class="card-title mb-3">
+                体重履歴
+            </h3>
+
+            <table class="table">
+
+                <thead>
+                <tr>
+                    <th>日付</th>
+                    <th>体重</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+                <tr th:each="record : ${weightRecords}">
+
+                    <td th:text="${record.recordDate}">
+                    </td>
+
+                    <td>
+                        <span th:text="${record.weight}">
+                        </span>
+                        kg
+                    </td>
+
+                    <td>
+
+                        <form
+                                th:action="@{/weight/delete/{id}(id=${record.id})}"
+                                method="post">
+
+                            <button
+                                    type="submit"
+                                    class="btn btn-danger btn-sm">
+                                削除
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- 体重グラフ -->
+    <!-- ========================= -->
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <h3 class="card-title mb-3">
+                体重推移
+            </h3>
+
+            <canvas id="weightChart">
+            </canvas>
+
+        </div>
+
+    </div>
+
+
+<!-- ========================= -->
+<!-- 体重グラフ -->
+<!-- ========================= -->
+
+<script th:inline="javascript">
+
+    const weightRecords =
+        /*[[${weightRecords}]]*/ [];
+
+    // 日付の古い順に並べ替える
+    weightRecords.sort((a, b) =>
+        a.recordDate.localeCompare(b.recordDate)
+    );
+
+    const labels =
+        weightRecords.map(
+            record => record.recordDate
+        );
+
+    const weights =
+        weightRecords.map(
+            record => record.weight
+        );
+
+    const ctx =
+        document.getElementById(
+            'weightChart'
+        );
+
+
+    if (ctx) {
+
+        new Chart(
+            ctx,
+            {
+
+                type: 'line',
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+                        {
+                            label: '体重',
+
+                            data: weights,
+
+                            tension: 0.2
+                        }
+                    ]
+                },
+
+
+                options: {
+
+                    responsive: true,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: false
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+</script>
+
+</div>
+</body>
+</html>

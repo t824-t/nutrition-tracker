@@ -104,9 +104,65 @@ public class HomeController {
         );
 
 
-        return "index";
+        return "dashboard";
     }
 
+
+
+    // =========================
+    // 食事管理画面
+    // =========================
+    @GetMapping("/meals")
+    public String mealsPage(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "new") String sort,
+            @RequestParam(required = false) LocalDate date,
+            Model model,
+            Authentication authentication) {
+
+        LocalDate selectedDate = date != null ? date : LocalDate.now();
+        Long userId = appUserService.getUserByUsername(authentication.getName()).getId();
+
+        prepareHomeModel(model, selectedDate, keyword, page, sort, userId);
+
+        Meal meal = new Meal();
+        meal.setMealDate(selectedDate);
+        model.addAttribute("meal", meal);
+
+        return "meals";
+    }
+
+    // =========================
+    // 体重管理画面
+    // =========================
+    @GetMapping("/weights")
+    public String weightsPage(Model model, Authentication authentication) {
+
+        LocalDate selectedDate = LocalDate.now();
+        Long userId = appUserService.getUserByUsername(authentication.getName()).getId();
+
+        prepareHomeModel(model, selectedDate, null, 0, "new", userId);
+
+        WeightRecord weightRecord = new WeightRecord();
+        weightRecord.setRecordDate(selectedDate);
+        model.addAttribute("weightRecord", weightRecord);
+
+        return "weights";
+    }
+
+    // =========================
+    // 目標設定画面
+    // =========================
+    @GetMapping("/goals")
+    public String goalsPage(Model model, Authentication authentication) {
+
+        Long userId = appUserService.getUserByUsername(authentication.getName()).getId();
+
+        prepareHomeModel(model, LocalDate.now(), null, 0, "new", userId);
+
+        return "goals";
+    }
 
     // =========================
     // index.html 共通Model
@@ -248,6 +304,29 @@ public class HomeController {
                 weightRecords
         );
 
+
+        // ダッシュボード用：最新体重と前回比
+        if (!weightRecords.isEmpty()) {
+            WeightRecord latest = weightRecords.get(0);
+            model.addAttribute("latestWeight", latest);
+
+            if (weightRecords.size() >= 2) {
+                double difference =
+                        latest.getWeight() - weightRecords.get(1).getWeight();
+                model.addAttribute("weightDifference", difference);
+            }
+        }
+
+        // ダッシュボード用：直近30日間の体重履歴
+        LocalDate startDate = LocalDate.now().minusDays(29);
+
+        List<WeightRecord> recentWeights = weightRecords.stream()
+                .filter(record -> !record.getRecordDate().isBefore(startDate))
+                .filter(record -> !record.getRecordDate().isAfter(LocalDate.now()))
+                .sorted(java.util.Comparator.comparing(WeightRecord::getRecordDate))
+                .toList();
+
+        model.addAttribute("recentWeights", recentWeights);
 
         // =========================
         // 栄養目標
@@ -419,7 +498,7 @@ public class HomeController {
             );
 
 
-            return "index";
+            return "meals";
         }
 
 
@@ -432,7 +511,7 @@ public class HomeController {
         mealService.saveMeal(meal);
 
 
-        return "redirect:/?date="
+        return "redirect:/meals?date="
                 + meal.getMealDate();
     }
 
@@ -535,7 +614,7 @@ public class HomeController {
         mealService.saveMeal(meal);
 
 
-        return "redirect:/?date="
+        return "redirect:/meals?date="
                 + meal.getMealDate();
     }
 
@@ -568,7 +647,7 @@ public class HomeController {
                 userId
         );
 
-        return "redirect:/?date="
+        return "redirect:/meals?date="
                 + mealDate;
     }
 
@@ -654,7 +733,7 @@ public class HomeController {
             );
 
 
-            return "index";
+            return "goals";
         }
 
 
@@ -669,7 +748,7 @@ public class HomeController {
         );
 
 
-        return "redirect:/";
+        return "redirect:/goals";
     }
 
 
@@ -728,7 +807,7 @@ public class HomeController {
             );
 
 
-            return "index";
+            return "weights";
         }
 
 
@@ -743,7 +822,7 @@ public class HomeController {
         );
 
 
-        return "redirect:/?date="
+        return "redirect:/weights?date="
                 + weightRecord.getRecordDate();
     }
 
@@ -764,6 +843,6 @@ public class HomeController {
         weightRecordService.deleteWeight(id, userId);
 
 
-        return "redirect:/";
+        return "redirect:/weights";
     }
 }

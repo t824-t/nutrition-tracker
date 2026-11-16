@@ -44,6 +44,28 @@
         .error { color: #c62828; }
         .hint { color: #64748b; font-size: 13px; }
         a { color: #2563eb; }
+
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper input {
+            padding-right: 72px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: auto;
+            margin: 0;
+            padding: 8px 10px;
+            background: transparent;
+            color: #2563eb;
+            font-size: 13px;
+        }
+        .password-toggle:hover {
+            background: #eff6ff;
+        }
     </style>
 </head>
 <body>
@@ -64,9 +86,15 @@
         <p class="hint">3〜50文字で入力してください</p>
 
         <label for="password">パスワード</label>
+        <div class="password-wrapper">
         <input id="password" name="password"
                type="password" autocomplete="new-password"
                minlength="8" required>
+        <button type="button" id="togglePassword"
+                class="password-toggle"
+                aria-label="パスワードを表示"
+                aria-pressed="false">表示</button>
+        </div>
         <p class="hint">8文字以上で入力してください</p>
 
         <button type="submit">アカウントを作成する</button>
@@ -77,5 +105,16 @@
         <a th:href="@{/login}">ログイン画面に戻る</a>
     </p>
 </div>
+
+<script>
+document.getElementById("togglePassword").addEventListener("click", function () {
+    const input = document.getElementById("password");
+    const visible = input.type === "password";
+    input.type = visible ? "text" : "password";
+    this.textContent = visible ? "隠す" : "表示";
+    this.setAttribute("aria-label", visible ? "パスワードを隠す" : "パスワードを表示");
+    this.setAttribute("aria-pressed", String(visible));
+});
+</script>
 </body>
 </html>
